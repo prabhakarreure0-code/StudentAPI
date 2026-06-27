@@ -64,3 +64,20 @@ jobs:
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/studentapi:v1
         # Jo image Runner ne banayi hai usko Docker Hub par upload karega.
         # Baad me EC2 ya Kubernetes isi image ko pull karke application run karenge.
+        
+
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull prabhu4511/studentapi:v1
+            docker stop studentapi-container || true
+            docker rm studentapi-container || true
+            docker run -d \
+              --name studentapi-container \
+              -p 80:8080 \
+              prabhu4511/studentapi:v1
