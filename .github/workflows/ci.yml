@@ -1,14 +1,66 @@
-name: StudentAPI CI
+name: StudentAPI CI          # Workflow ka naam. GitHub Actions tab me isi naam se dikhega.
 
 on:
-  push:
+  push:                      # Jab bhi git push hoga workflow trigger hoga.
     branches:
-      - main
+      - main                 # Sirf main branch pe push hone par CI chalegi.
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build:                     # Job ka naam (isme poora CI process hai).
+
+    runs-on: ubuntu-latest   # GitHub ek temporary Ubuntu VM (Runner) create karega.
 
     steps:
+
       - name: Checkout Source Code
         uses: actions/checkout@v4
+        # GitHub repository ka latest source code Runner par copy karega.
+        # Iske bina Runner ke paas project files hi nahi hongi.
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+        # Runner me .NET SDK install karega.
+        # Taaki dotnet restore/build/test/publish commands chal sake.
+
+      - name: Restore Dependencies
+        run: dotnet restore
+        # NuGet packages download karega.
+        # Jo packages .csproj me likhe hain wo Runner pe install honge.
+
+      - name: Build Application
+        run: dotnet build --no-restore
+        # Source code compile karega.
+        # --no-restore isliye kyunki restore pehle hi ho chuka hai.
+
+      - name: Run Unit Tests
+        run: dotnet test --no-build
+        # Unit tests execute karega.
+        # Agar test fail hua to pipeline yahin stop ho jayegi.
+        # --no-build isliye kyunki build pehle hi ho chuka hai.
+
+      - name: Publish Application
+        run: dotnet publish -c Release --no-build -o ./publish
+        # Production-ready publish output banayega.
+        # Isme StudentAPI.dll aur required runtime files publish folder me aayengi.
+        # Ye Runner par temporary banta hai.
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # GitHub Runner Docker Hub me login karega.
+        # Taaki image push kar sake.
+
+      - name: Build Docker Image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/studentapi:v1 .
+        # Dockerfile execute hogi.
+        # Docker image banegi.
+        # Ye image latest source code se create hogi.
+
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/studentapi:v1
+        # Jo image Runner ne banayi hai usko Docker Hub par upload karega.
+        # Baad me EC2 ya Kubernetes isi image ko pull karke application run karenge.
