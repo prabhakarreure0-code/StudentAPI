@@ -30,7 +30,7 @@ jobs:
         # Jo packages .csproj me likhe hain wo Runner pe install honge.
 
       - name: Build Application
-        run: dotnet build --no-restore
+        run: dotnet build -c Release --no-restore
         # Source code compile karega.
         # --no-restore isliye kyunki restore pehle hi ho chuka hai.
 
